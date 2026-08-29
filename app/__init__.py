@@ -19,6 +19,7 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix="/api")
 
     @app.route("/health")
+    @app.route("/healthz")
     def health():
         return jsonify(
             {
