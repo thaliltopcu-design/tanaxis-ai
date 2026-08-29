@@ -7,23 +7,23 @@ load_dotenv()
 class Config:
     """TANAXIS AI ortak uygulama ayarlari."""
 
-    SECRET_KEY = os.getenv(
+    SECRET_KEY = os.environ.get(
         "SECRET_KEY",
         "tanaxis-development-key"
     )
 
-    GROQ_API_KEY = os.getenv(
+    GROQ_API_KEY = os.environ.get(
         "GROQ_API_KEY",
         ""
     )
 
-    AI_PROVIDER = os.getenv(
+    AI_PROVIDER = os.environ.get(
         "AI_PROVIDER",
         "groq"
     )
 
     # Mevcut SQLite veritabani dosyasi
-    DATABASE = os.getenv(
+    DATABASE = os.environ.get(
         "DATABASE",
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -32,12 +32,12 @@ class Config:
     )
 
     # Proje yonergesinde istenen veritabani URL ayari
-    DATABASE_URL = os.getenv(
+    DATABASE_URL = os.environ.get(
         "DATABASE_URL",
         f"sqlite:///{DATABASE}"
     )
 
-    CORS_ORIGINS = os.getenv(
+    CORS_ORIGINS = os.environ.get(
         "CORS_ORIGINS",
         "*"
     )
