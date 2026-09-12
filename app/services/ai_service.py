@@ -65,7 +65,7 @@ class AIService:
                     "model": "openai/gpt-oss-20b",
                     "messages": messages,
                     "temperature": 0.5,
-                    "max_tokens": 500
+                    "max_tokens": 1200
                 },
                 timeout=30
             )
