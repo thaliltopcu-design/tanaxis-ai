@@ -1,4 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request
+import csv
+import io
 
 from app.database import lead_ekle, tum_leadler
 from app.services.ai_service import AIServiceError, ai_service
@@ -111,3 +113,33 @@ def leadleri_listele():
                 "hata": "Kayitlar getirilirken bir hata olustu."
             }
         ), 500
+@api_bp.route("/leads/csv", methods=["GET"])
+def leadleri_csv_indir():
+    try:
+        leads = tum_leadler()
+
+        output = io.StringIO()
+        output.write("\ufeff")  # Excel'de Türkçe karakterler düzgün açılsın
+
+        writer = csv.writer(output)
+        writer.writerow(["ID", "İsim", "Telefon", "Mesaj", "Tarih"])
+
+        for lead in leads:
+            writer.writerow([
+                lead.get("id", ""),
+                lead.get("isim", ""),
+                lead.get("telefon", ""),
+                lead.get("mesaj", ""),
+                lead.get("tarih", "")
+            ])
+
+        return output.getvalue(), 200, {
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": "attachment; filename=TANAXIS_lead_kayitlari.csv"
+        }
+
+    except Exception:
+        return jsonify({
+            "basari": False,
+            "hata": "CSV dosyasi olusturulurken bir hata olustu."
+        }), 500
