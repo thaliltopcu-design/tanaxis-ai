@@ -2,8 +2,7 @@ from flask import Blueprint, jsonify, render_template, request
 import csv
 import io
 import os
-import smtplib
-from email.message import EmailMessage
+import requests
 
 from app.database import lead_ekle, tum_leadler
 from app.services.ai_service import AIServiceError, ai_service
@@ -13,35 +12,38 @@ pages_bp = Blueprint("pages", __name__)
 api_bp = Blueprint("api", __name__)
 
 def lead_mail_gonder(isim, telefon, mesaj):
-    mail_username = os.getenv("MAIL_USERNAME")
-    mail_password = os.getenv("MAIL_PASSWORD")
-    mail_receiver = os.getenv("MAIL_RECEIVER")
+    api_key = os.getenv("RESEND_API_KEY")
 
-    if not mail_username or not mail_password or not mail_receiver:
+    if not api_key:
         return
 
-    email = EmailMessage()
-    email["Subject"] = f"TANAXIS | Yeni Lead - {isim}"
-    email["From"] = mail_username
-    email["To"] = mail_receiver
+    try:
+        requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": "TANAXIS Lead <onboarding@resend.dev>",
+                "to": ["tanaxis.co@gmail.com"],
+                "subject": f"TANAXIS | Yeni Lead - {isim}",
+                "text": f"""TANAXIS sistemine yeni bir lead kaydi geldi.
 
-    email.set_content(
-        f"""TANAXIS sistemine yeni bir lead kaydı geldi.
-
-İsim: {isim}
+Isim: {isim}
 Telefon: {telefon}
 
-Başvuru / Talep Bilgileri:
+Basvuru / Talep Bilgileri:
 {mesaj}
 
 ---
-Bu e-posta TANAXIS Lead Sistemi tarafından otomatik gönderilmiştir.
+Bu e-posta TANAXIS Lead Sistemi tarafindan otomatik gonderilmistir.
 """
-    )
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(mail_username, mail_password)
-        smtp.send_message(email)
+            },
+            timeout=5
+        )
+    except requests.RequestException as hata:
+        print(f"Lead e-postasi gonderilemedi: {hata}")
 
 @pages_bp.route("/")
 def index():
@@ -109,7 +111,8 @@ def lead_kaydet():
             telefon=telefon,
             mesaj=mesaj
         )
-
+        
+        lead_mail_gonder(isim, telefon, mesaj)
         
         return jsonify(
             {
