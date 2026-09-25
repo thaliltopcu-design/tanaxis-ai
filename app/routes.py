@@ -1,6 +1,9 @@
 from flask import Blueprint, jsonify, render_template, request
 import csv
 import io
+import os
+import smtplib
+from email.message import EmailMessage
 
 from app.database import lead_ekle, tum_leadler
 from app.services.ai_service import AIServiceError, ai_service
@@ -9,6 +12,36 @@ from app.services.ai_service import AIServiceError, ai_service
 pages_bp = Blueprint("pages", __name__)
 api_bp = Blueprint("api", __name__)
 
+def lead_mail_gonder(isim, telefon, mesaj):
+    mail_username = os.getenv("MAIL_USERNAME")
+    mail_password = os.getenv("MAIL_PASSWORD")
+    mail_receiver = os.getenv("MAIL_RECEIVER")
+
+    if not mail_username or not mail_password or not mail_receiver:
+        return
+
+    email = EmailMessage()
+    email["Subject"] = f"TANAXIS | Yeni Lead - {isim}"
+    email["From"] = mail_username
+    email["To"] = mail_receiver
+
+    email.set_content(
+        f"""TANAXIS sistemine yeni bir lead kaydı geldi.
+
+İsim: {isim}
+Telefon: {telefon}
+
+Başvuru / Talep Bilgileri:
+{mesaj}
+
+---
+Bu e-posta TANAXIS Lead Sistemi tarafından otomatik gönderilmiştir.
+"""
+    )
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(mail_username, mail_password)
+        smtp.send_message(email)
 
 @pages_bp.route("/")
 def index():
@@ -76,6 +109,11 @@ def lead_kaydet():
             telefon=telefon,
             mesaj=mesaj
         )
+
+        try:
+            lead_mail_gonder(isim, telefon, mesaj)
+        except Exception as mail_hatasi:
+            print(f"Lead kaydedildi ancak e-posta gonderilemedi: {mail_hatasi}")
 
         return jsonify(
             {
