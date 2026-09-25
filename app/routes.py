@@ -110,11 +110,7 @@ def lead_kaydet():
             mesaj=mesaj
         )
 
-        try:
-            lead_mail_gonder(isim, telefon, mesaj)
-        except Exception as mail_hatasi:
-            print(f"Lead kaydedildi ancak e-posta gonderilemedi: {mail_hatasi}")
-
+        
         return jsonify(
             {
                 "basari": True,
